@@ -1,8 +1,0 @@
-INTSTYLE=ise
-INFILE=D:\master\PI_elecIndu\iseProject\groupe4_cansat\top.ncd
-OUTFILE=D:\master\PI_elecIndu\iseProject\groupe4_cansat\top.bit
-FAMILY=Spartan6
-PART=xc6slx9-3tqg144
-WORKINGDIR=D:\master\PI_elecIndu\iseProject\groupe4_cansat
-LICENSE=ISE
-USER_INFO=174116386_174116387_210720312_167
