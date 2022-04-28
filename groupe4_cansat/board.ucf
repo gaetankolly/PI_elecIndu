@@ -1,0 +1,62 @@
+#-------------------------------------------------------------------------------
+# Clock and reset
+#
+#NET     "reset_n"               LOC =   "P2"    | PULLUP;
+#NET     "clockIn"               LOC =  "P16";
+
+#-------------------------------------------------------------------------------
+# Power board
+#
+NET     "pwr_leds<0>"           LOC = "P121";
+NET     "pwr_leds<1>"           LOC = "P118";
+NET     "pwr_switches<0>"       LOC = "P141"    | PULLUP;
+NET     "pwr_switches<1>"       LOC = "P139"    | PULLUP;
+NET     "pwr_switches<2>"       LOC = "P137"    | PULLUP;
+NET     "pwr_switches<3>"       LOC = "P133"    | PULLUP;
+#NET     "pwr_txd"               LOC = "P127"    | PULLUP;
+#NET     "pwr_rxd"               LOC = "P124";
+
+#-------------------------------------------------------------------------------
+# Sensor board
+#
+#NET     "sens_DIN"              LOC =   "P24";
+#NET     "sens_DOUT"             LOC =   "P27";
+#NET     "sens_DRDY_n"           LOC =   "P32";
+#NET     "sens_SCLK"             LOC =   "P35";
+#NET     "sens_SYNC"             LOC =   "P15";
+#NET     "sens_CLK"              LOC =   "P12";
+#NET     "sens_PWDN_n"           LOC =   "P9" ;
+#NET     "sens_RESET_n"          LOC =   "P6" ;
+
+#-------------------------------------------------------------------------------
+# Computer On Module (COM) board
+#
+#NET     "com_RxD"               LOC =  "P14";
+#NET     "com_TxD"               LOC =  "P11";
+#NET     "com_RESET_n"           LOC =  "P8"     | S;
+#NET     "com_CS0"               LOC =  "P30";
+#NET     "com_CS1"               LOC =  "P5" ;
+#NET     "com_CLK"               LOC =  "P33";
+#NET     "com_MOSI"              LOC =  "P26";
+#NET     "com_MISO"              LOC =  "P23";
+
+#-------------------------------------------------------------------------------
+# XBee (RF) board
+#
+#NET     "rf_RxD"                LOC = "P126";
+#NET     "rf_TxD"                LOC = "P123";
+#NET     "rf_reset_n"            LOC = "P119";
+#NET     "rf_sleepRequest"       LOC = "P117";
+#NET     "rf_sleep_n"            LOC = "P142";
+#NET     "rf_associated"         LOC = "P138";
+#NET     "rf_rssiPwm"            LOC = "P134";
+#NET     "rf_dio"                LOC = "P140";
+
+#-------------------------------------------------------------------------------
+# Relay board
+#
+#NET     "rel_RESET_n"           LOC = "P117";
+#NET     "rel_DOUT"              LOC = "P142";
+#NET     "rel_DIN"               LOC = "P138";
+#NET     "rel_CS_n"              LOC = "P134";
+#NET     "rel_SCLK"              LOC = "P140";

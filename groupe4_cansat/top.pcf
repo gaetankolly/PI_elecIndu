@@ -1,0 +1,13 @@
+//! **************************************************************************
+// Written by: Map P.20131013 on Thu Apr 28 18:55:53 2022
+//! **************************************************************************
+
+SCHEMATIC START;
+COMP "pwr_switches<2>" LOCATE = SITE "P137" LEVEL 1;
+COMP "pwr_switches<3>" LOCATE = SITE "P133" LEVEL 1;
+COMP "pwr_leds<0>" LOCATE = SITE "P121" LEVEL 1;
+COMP "pwr_leds<1>" LOCATE = SITE "P118" LEVEL 1;
+COMP "pwr_switches<0>" LOCATE = SITE "P141" LEVEL 1;
+COMP "pwr_switches<1>" LOCATE = SITE "P139" LEVEL 1;
+SCHEMATIC END;
+
