@@ -15,6 +15,8 @@ NET     "pwr_switches<2>"       LOC = "P137"    | PULLUP;
 NET     "pwr_switches<3>"       LOC = "P133"    | PULLUP;
 #NET     "pwr_txd"               LOC = "P127"    | PULLUP;
 #NET     "pwr_rxd"               LOC = "P124";
+NET     "pwr_txd"               LOC = "P124"    | PULLUP;
+NET     "pwr_rxd"               LOC = "P127";
 
 #-------------------------------------------------------------------------------
 # Sensor board
