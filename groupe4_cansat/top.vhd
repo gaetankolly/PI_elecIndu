@@ -64,6 +64,8 @@ architecture Behavioral of top is
   );
   END COMPONENT;
   
+  
+  
   signal send_s : std_ulogic;
   signal rxData_s: std_ulogic_vector(uartDataBitNb-1 downto 0);
   signal txData_s: std_ulogic_vector(uartDataBitNb-1 downto 0);

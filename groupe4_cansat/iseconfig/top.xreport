@@ -1,11 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <report-views version="2.0" >
  <header>
-  <DateModified>2022-05-10T17:28:00</DateModified>
+  <DateModified>2022-05-11T14:03:58</DateModified>
   <ModuleName>top</ModuleName>
   <SummaryTimeStamp>2022-05-05T18:13:35</SummaryTimeStamp>
-  <SavedFilePath>D:/master/PI_elecIndu/gitProject/PI_elecIndu/groupe4_cansat/iseconfig/top.xreport</SavedFilePath>
-  <ImplementationReportsDirectory>D:/master/PI_elecIndu/gitProject/PI_elecIndu/groupe4_cansat\</ImplementationReportsDirectory>
+  <SavedFilePath>C:/Users/natha/Desktop/PI_ElecIndu/ProgFPGA/PI_elecIndu/groupe4_cansat/iseconfig/top.xreport</SavedFilePath>
+  <ImplementationReportsDirectory>C:/Users/natha/Desktop/PI_ElecIndu/ProgFPGA/PI_elecIndu/groupe4_cansat\</ImplementationReportsDirectory>
   <DateInitialized>2022-04-28T18:32:03</DateInitialized>
   <EnableMessageFiltering>false</EnableMessageFiltering>
  </header>
