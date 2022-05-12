@@ -21,14 +21,14 @@ NET     "pwr_rxd"               LOC = "P127";
 #-------------------------------------------------------------------------------
 # Sensor board
 #
-#NET     "sens_DIN"              LOC =   "P24";
-#NET     "sens_DOUT"             LOC =   "P27";
-#NET     "sens_DRDY_n"           LOC =   "P32";
-#NET     "sens_SCLK"             LOC =   "P35";
-#NET     "sens_SYNC"             LOC =   "P15";
-#NET     "sens_CLK"              LOC =   "P12";
-#NET     "sens_PWDN_n"           LOC =   "P9" ;
-#NET     "sens_RESET_n"          LOC =   "P6" ;
+NET     "sens_DIN"              LOC =   "P24";
+NET     "sens_DOUT"             LOC =   "P27";
+NET     "sens_DRDY_n"           LOC =   "P32";
+NET     "sens_SCLK"             LOC =   "P35";
+NET     "sens_SYNC"             LOC =   "P15";
+NET     "sens_CLK"              LOC =   "P12";
+NET     "sens_PWDN_n"           LOC =   "P9" ;
+NET     "sens_RESET_n"          LOC =   "P6" ;
 
 #-------------------------------------------------------------------------------
 # Computer On Module (COM) board
