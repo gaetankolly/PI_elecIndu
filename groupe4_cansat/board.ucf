@@ -13,10 +13,8 @@ NET     "pwr_switches<0>"       LOC = "P141"    | PULLUP;
 NET     "pwr_switches<1>"       LOC = "P139"    | PULLUP;
 NET     "pwr_switches<2>"       LOC = "P137"    | PULLUP;
 NET     "pwr_switches<3>"       LOC = "P133"    | PULLUP;
-#NET     "pwr_txd"               LOC = "P127"    | PULLUP;
-#NET     "pwr_rxd"               LOC = "P124";
-NET     "pwr_txd"               LOC = "P124"    | PULLUP;
-NET     "pwr_rxd"               LOC = "P127";
+#NET     "pwr_txd"               LOC = "P124";
+#NET     "pwr_rxd"               LOC = "P127"| PULLUP;
 
 #-------------------------------------------------------------------------------
 # Sensor board
@@ -62,3 +60,7 @@ NET     "sens_RESET_n"          LOC =   "P6" ;
 #NET     "rel_DIN"               LOC = "P138";
 #NET     "rel_CS_n"              LOC = "P134";
 #NET     "rel_SCLK"              LOC = "P140";
+NET		"rel_RX"						LOC = "P123";
+NET		"rel_TX"						LOC = "P126" | PULLUP;
+NET		"rel_MODE"					LOC = "P117";
+

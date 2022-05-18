@@ -49,3 +49,12 @@ groupe4_cansat/output.txt
 *.vdbx
 groupe4_cansat/groupe4_cansat.xise
 groupe4_cansat/webtalk_pn.xml
+groupe4_cansat/webtalk_impact.xml
+groupe4_cansat/top_usage.xml
+groupe4_cansat/top_summary.xml
+groupe4_cansat/_impact.log
+groupe4_cansat/_impact.cmd
+groupe4_cansat/xlnx_auto_0_xdb/cst.xbcd
+groupe4_cansat/_ngo/netlist.lst
+groupe4_cansat/_xmsgs/map.xmsgs~Stashed changes
+groupe4_cansat/_xmsgs/par.xmsgs~Stashed changes

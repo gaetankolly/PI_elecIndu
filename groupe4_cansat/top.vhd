@@ -36,8 +36,11 @@ entity top is
 			pwr_switches: IN STD_LOGIC_VECTOR (3 DOWNTO 0);
 			clockIn: IN STD_LOGIC;				-- 106.25 MHz
 			reset_n: IN STD_LOGIC;
-			pwr_rxd: IN STD_LOGIC;
-			pwr_txd: OUT STD_LOGIC;
+			--pwr_rxd: IN STD_LOGIC;
+			--pwr_txd: OUT STD_LOGIC
+			rel_RX: IN STD_LOGIC;
+			rel_TX: OUT STD_LOGIC;
+			rel_MODE: OUT STD_LOGIC
 			-- Ads128
 			sens_SCLK: OUT STD_LOGIC;
 			sens_DOUT: IN STD_LOGIC;
@@ -166,17 +169,17 @@ begin
 	pwr_leds(1)<='0';
 	--pwr_leds(1) <=test_s;
 	--pwr_leds(0)<=send_s;
-	pwr_txd<=test_s;
-	--pwr_rxd<=test_s;
+	--pwr_txd<=test_s;
+	--rel_TX<=test_s;
 	
-	-- components UART DEBUG-------------s
+	-- components UART -------------s
 	Inst_uartCore: uartCore PORT MAP(
 		RxD    => pwr_rxd,
 		clock   => clockIn,
 		read   => '0',
 		reset  => NOT reset_n,
 		scaler => to_unsigned(BAUDERATE_DIVIDER, ahbDataBitNb),
-		send => send_s,
+		send => rel_TX,
 		txData => txData_s,
 		--TxD    => pwr_txd,
 		TxD => test_s,
@@ -184,7 +187,11 @@ begin
 		status => status_uart_s
   );
   
-  Inst_ads1282: ahbAds1282
+  txData_s <= "01100001"; -- a 
+  rel_MODE <='1'; 
+  
+  -- component ADC
+   Inst_ads1282: ahbAds1282
   GENERIC MAP (
      dataBitNb => 8
   )  
@@ -210,7 +217,7 @@ begin
 		hResp    => hResp_s
   );
   
-  txData_s <= "01100001"; -- a  
+  
   
 	process(clockIn, reset_n)
 		variable counter_v : unsigned(31 downto 0);
