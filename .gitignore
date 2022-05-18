@@ -34,3 +34,18 @@ top_pad.txt
 *.xrpt
 *.log
 
+*.xmsgs
+groupe4_cansat/_xmsgs/pn_parser.xmsgs
+groupe4_cansat/_ngo/netlist.lst
+*.xbcd
+*.xmsgs
+*.log
+*.cmd
+groupe4_cansat/output.txt
+*.xmsgs
+*.projectmgr
+*.xreport
+*.vdbl
+*.vdbx
+groupe4_cansat/groupe4_cansat.xise
+groupe4_cansat/webtalk_pn.xml
