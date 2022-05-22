@@ -27,7 +27,7 @@ ENTITY ahbAds1282 IS
     hTrans   : IN     std_ulogic_vector (ahbTransBitNb-1 DOWNTO 0);
     hWData   : IN     std_ulogic_vector (ahbDataBitNb-1 DOWNTO 0);
     hWrite   : IN     std_uLogic;
-    CLK      : OUT    std_uLogic;
+    CLK      : OUT    std_uLogic;			-- modulator clock
     DIN      : OUT    std_uLogic;
     PWDN_n   : OUT    std_uLogic;
     RESET_n  : OUT    std_uLogic;
@@ -105,6 +105,7 @@ ARCHITECTURE RTL OF ahbAds1282 IS
   signal adcStatusRegister: registerType;
 
 BEGIN
+
   ------------------------------------------------------------------------------
                                                               -- reset and clock
   reset <= not hReset_n;
@@ -144,9 +145,13 @@ BEGIN
         writeRegisterArray(spiClockDividerRegisterId)'length
       );
     elsif rising_edge(clock) then
-      if writeReg = '1' then
+      if writeReg = '1' AND addressReg = adcRegisterId then
         writeRegisterArray(to_integer(addressReg)) <= unsigned(hWData);
       end if;
+		writeRegisterArray(modulatorClockDividerRegisterId) <= to_unsigned(
+			ADC_CLOCK_DIVIDER, writeRegisterArray(modulatorClockDividerRegisterId)'length);
+		writeRegisterArray(spiClockDividerRegisterId)  <= to_unsigned(
+			SPI_CLOCK_DIVIDER, writeRegisterArray(spiClockDividerRegisterId)'length);
     end if;
   end process storeRegisters;
 
@@ -390,13 +395,14 @@ BEGIN
   begin
     case to_integer(addressReg) is
       when valueLowRegisterId =>
-        hRData <= std_ulogic_vector(adcSample(hRData'range));
+        --hRData <= std_ulogic_vector(adcSample(hRData'range));
+		  hRdata <=   "00000100" & "00000011" & "00000010" & "00001001";
       when valueHighRegisterId =>
-        hRData <= std_ulogic_vector(
-          shift_right(adcSample, hRData'length)(hRData'range)
-        );
+        --hRData <= std_ulogic_vector( shift_right(adcSample, hRData'length)(hRData'range));
+		  hRdata <= "00001000" & "00000111" & "00000110" & "00000101";
       when statusRegisterId =>
         hRData <= std_ulogic_vector(adcStatusRegister);
+		  --hRdata <= "00001000" & "00000111" & "00000110" & "00000101";
       when others => hRData <= (others => '-');
     end case;
   end process selectData;

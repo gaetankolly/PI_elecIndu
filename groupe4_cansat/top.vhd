@@ -22,6 +22,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 use work.constants.all;
 
+
+
+
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
 --use IEEE.NUMERIC_STD.ALL;
@@ -36,11 +39,11 @@ entity top is
 			pwr_switches: IN STD_LOGIC_VECTOR (3 DOWNTO 0);
 			clockIn: IN STD_LOGIC;				-- 106.25 MHz
 			reset_n: IN STD_LOGIC;
-			--pwr_rxd: IN STD_LOGIC;
-			--pwr_txd: OUT STD_LOGIC
-			rel_RX: IN STD_LOGIC;
-			rel_TX: OUT STD_LOGIC;
-			rel_MODE: OUT STD_LOGIC
+			pwr_rxd: IN STD_LOGIC;
+			pwr_txd: OUT STD_LOGIC;
+			--rel_RX: IN STD_LOGIC;
+			--rel_TX: OUT STD_LOGIC;
+			rel_MODE: OUT STD_LOGIC;
 			-- Ads128
 			sens_SCLK: OUT STD_LOGIC;
 			sens_DOUT: IN STD_LOGIC;
@@ -102,12 +105,37 @@ architecture Behavioral of top is
   );
   END COMPONENT;
   
+  -- main FSM
+  type stateType is (
+    waitDataAvailable, readLow, readHigh, sendData, pause
+  );
+  signal state: stateType;
+  signal nextState: stateType;
+  signal dataReady_s: std_Logic;
+  signal readDone_s: std_Logic;
+  signal enReadTransferAhb_s : std_ulogic;
+  signal uart_done_s: std_logic;
+  signal enTransferUART_s : std_ulogic;
+  signal data_s: std_ulogic_vector (2*ahbDataBitNb-1 DOWNTO 0);
+  
   -- Uart
   signal send_s : std_ulogic;
   signal rxData_s: std_ulogic_vector(uartDataBitNb-1 downto 0);
   signal txData_s: std_ulogic_vector(uartDataBitNb-1 downto 0);
   signal status_uart_s: std_ulogic_vector (uartStatusBitNb-1 DOWNTO 0);
   signal test_s:std_ulogic;
+  type stateFSMuartType is (
+    idle, send, sending, ending
+  );
+  signal stateUart: stateFSMuartType;
+  signal nextStateUart: stateFSMuartType;
+  signal shiftReg_s: std_ulogic_vector (2*ahbDataBitNb-1 DOWNTO 0);
+  constant shiftRegisterSize: integer:=shiftReg_s'length/uartDataBitNb;
+  signal shiftRegCounter_s: unsigned(4 DOWNTO 0);
+                                                                         -- status
+  constant statusReadyId: natural := 0;
+  constant statusSendingId: natural := 1;
+  constant statusReceivingId: natural := 2;
   
   -- Ads1282
   signal hAddr_s : unsigned(ahbAddressBitNb-1 DOWNTO 0);
@@ -118,6 +146,17 @@ architecture Behavioral of top is
   signal hRData_s : std_ulogic_vector(ahbDataBitNb-1 DOWNTO 0);
   signal hReady_s : std_ulogic;
   signal hResp_s : std_ulogic;
+                                                           -- register definitions
+  constant modulatorClockDividerRegisterId: natural := 0;
+  constant spiClockDividerRegisterId: natural := 1;
+  constant adcRegisterId: natural := 2;
+
+  constant valueLowRegisterId: natural := 0;
+  constant valueHighRegisterId: natural := 1;
+  constant statusRegisterId: natural := 2;
+  constant adcDataAvailableId: natural := 0;
+  
+  
   
 begin
 
@@ -147,16 +186,16 @@ begin
 		variable toogle_v: STD_LOGIC;
       begin
         if (reset_n = '0') then
-            pwr_leds(0)<='0';
+            --pwr_leds(0)<='0';
 				toogle_v:='0';
 				counter_v := (others => '0');
         elsif rising_edge(clockIn) then
 				if clk_1ms_s = '1' then
 					if (counter_v < 500) then
-						 pwr_leds(0)<='0';
+						 --pwr_leds(0)<='0';
 						 counter_v:=counter_v+1;
 					elsif (counter_v < 1000) then
-						 pwr_leds(0)<='1';
+						 --pwr_leds(0)<='1';
 						 counter_v:=counter_v+1;
 					else
 						counter_v := (others => '0');
@@ -166,30 +205,288 @@ begin
     end process;	 
 	 
 	--pwr_leds(1) <= status_uart_s(1);
-	pwr_leds(1)<='0';
+	--pwr_leds(1)<='0';
 	--pwr_leds(1) <=test_s;
 	--pwr_leds(0)<=send_s;
 	--pwr_txd<=test_s;
 	--rel_TX<=test_s;
+	---------------------------------------------------------------
+	-- main FSM
+  sequencer: process(state,readDone_s,hRData_s(adcDataAvailableId),uart_done_s,test_s)
+  begin
+      case state is
+        when waitDataAvailable =>
+			 if readDone_s ='1' and hRData_s(adcDataAvailableId) ='1' then 
+				--if readDone_s ='1'  then 
+					nextState <= readLow;
+			else
+					nextState <= waitDataAvailable;
+			end if;
+			when readLow =>
+				if readDone_s ='1' then 
+					nextState <= readHigh;
+				else
+					nextState <= readLow;
+        		end if;
+			when readHigh =>
+				if readDone_s ='1' then
+					nextState <= sendData;
+				else
+					nextState <= readLow;
+				end if;
+			when sendData => 
+				if uart_done_s ='1' then
+					--state <= waitDataAvailable; 
+					nextState <= pause;
+				else 
+					nextState <= sendData;
+				end if;
+			when pause=>
+				if test_s='1' then
+					nextState<=waitDataAvailable;
+				else
+					nextState<=pause;
+				end if;
+      end case;
+  end process sequencer;
+  
+  process(reset_n, clockIn)
+  begin
+    if reset_n = '0' then
+      state<=waitDataAvailable;
+    elsif rising_edge(clockIn) then
+		state <= nextState;
+	 end if;
+  end process;
+  
+  -- FSM controls
+  control: process(state)
+  begin
+    case state is
+      when waitDataAvailable =>
+			enReadTransferAhb_s<='1';
+			enTransferUART_s<='0';
+			hAddr_s <= to_unsigned(statusRegisterId, hAddr_s'length);
+			pwr_leds(0)<='1'; --debug
+			pwr_leds(1) <='0';
+      when readLow =>
+			enReadTransferAhb_s<='1';
+			enTransferUART_s<='0';
+			hAddr_s <= to_unsigned(valueLowRegisterId, hAddr_s'length);
+			pwr_leds(0) <='0';
+			pwr_leds(1) <='1';
+      when readHigh =>
+			enReadTransferAhb_s<='1';
+			enTransferUART_s<='0';
+			hAddr_s <= to_unsigned(valueHighRegisterId, hAddr_s'length);
+			pwr_leds(0) <='1';
+			pwr_leds(1) <='1';
+      when sendData => 
+      	enReadTransferAhb_s<='0';
+		  	enTransferUART_s<='1';
+			pwr_leds(0) <='0';
+			pwr_leds(1) <='0';
+		when pause =>
+			enTransferUART_s<='0';
+			enReadTransferAhb_s<='0';
+      when others => null;
+    end case;
+  end process control;
+  
+	-- read Bus ahb
+	transferAHB: process(reset_n, clockIn)
+	variable phase: integer range 0 to 3;
+	begin
+		if reset_n = '0' then
+			phase:=0;
+		elsif rising_edge(clockIn) then
+			readDone_s<='0';
+			if enReadTransferAhb_s = '1' and phase =0 then
+				phase:=phase+1;
+				hSel_s<='1';
+				hwrite_s <='0';
+			elsif enReadTransferAhb_s = '1'  and phase =1 then
+				readDone_s<='1';
+				phase:=phase+1;
+				hSel_s<='1';
+				hwrite_s <='0';
+				if state= readLow then
+					data_s(ahbDataBitNb-1 DOWNTO 0)<=hRData_s;
+					--data_s(ahbDataBitNb-1 DOWNTO 0) <="01100001" & "01100010" & "01100011" & "01100100";
+				elsif state= readHigh then
+					data_s(ahbDataBitNb*2-1 DOWNTO ahbDataBitNb)<=hRData_s;
+					--data_s(ahbDataBitNb*2-1 DOWNTO ahbDataBitNb)<="01101001" & "01101010" & "01101011" & "01101100";
+				end if; 
+			elsif enReadTransferAhb_s = '1'  and phase =2 then
+				readDone_s<='1';
+				hSel_s<='0';
+				hwrite_s <='0';
+				phase:=0;
+				if state= readLow then
+					data_s(ahbDataBitNb-1 DOWNTO 0)<=hRData_s;
+					--data_s(ahbDataBitNb-1 DOWNTO 0) <="01100001" & "01100010" & "01100011" & "01100100";
+				elsif state= readHigh then
+					data_s(ahbDataBitNb*2-1 DOWNTO ahbDataBitNb)<=hRData_s;
+					--data_s(ahbDataBitNb*2-1 DOWNTO ahbDataBitNb)<="01101001" & "01101010" & "01101011" & "01101100";
+				end if; 
+			else
+				phase:=0;
+			end if;
+		end if;
+	end process transferAHB;
 	
+	
+	------------------------------------------------------------------------
+	-- transfer uart
+	-- FSM uart
+	
+	process(reset_n, clockIn)
+  begin
+    if reset_n = '0' then
+      stateUART<=idle;
+    elsif rising_edge(clockIn) then
+		stateUART <= nextStateUART;
+	 end if;
+  end process;
+  
+	sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId))
+  begin
+      case stateUART is
+        when idle =>
+				if enTransferUART_s ='1' then 
+					nextStateUART <= send;
+				else
+					nextStateUART <= idle;
+				end if;
+			when send =>
+				nextStateUART<= sending;
+			when sending =>
+				if status_uart_s(statusSendingId) = '0' then
+					if shiftRegCounter_s <8   then
+						nextStateUART <= send;
+					else 
+						nextStateUART <= ending;
+					end if;
+				else
+					nextStateUART <= sending;
+				end if;
+			when ending => 
+					nextStateUART <= idle;
+      end case;
+  end process sequencerUART;
+  
+  -- FSM controls
+  controlUART: process(stateUART)
+  begin
+    case stateUART is
+      when idle =>
+			send_s<='0';
+			uart_done_s<='0';
+			-- 
+      when send =>
+			send_s<='1';
+			uart_done_s<='0';	
+			txData_s <= shiftReg_s(uartDataBitNb-1 downto 0);	
+      when sending =>
+			send_s<='0';
+			uart_done_s<='0';	
+      when ending => 
+      	uart_done_s<='1';
+			send_s<='0';
+      when others => null;
+    end case;
+  end process controlUART; 
+  
+  
+  -- shift register counter
+  process(reset_n, clockIn)
+  begin
+    if reset_n = '0' then
+      shiftRegCounter_s<=(others => '0');
+    elsif rising_edge(clockIn) then
+		if(stateUart = send) then
+			shiftReg_s(shiftReg_s'high-uartDataBitNb downto 0) <= shiftReg_s(shiftReg_s'high downto uartDataBitNb);
+			shiftReg_s(shiftReg_s'high downto shiftReg_s'high-uartDataBitNb) <= (others =>'0');
+			shiftRegCounter_s<=shiftRegCounter_s+1;
+		elsif stateUart = sending then
+			shiftRegCounter_s<=shiftRegCounter_s;
+			shiftReg_s<=shiftReg_s;
+		else
+			shiftRegCounter_s<=(others=>'0');
+			--shiftReg_s <= "00001000" & "00000111" & "00000110" & "00000101" & "00000100" & "00000011" & "00000010" & "00000001";
+			shiftReg_s<=data_s;
+		end if;
+	 end if;
+  end process;
+	
+--	-- transfer uart
+--	transferUART: process(reset_n, clockIn)
+--		variable phase: std_logic;
+--		variable i: integer;
+--		variable shiftReg_v: std_ulogic_vector (2*ahbDataBitNb-1 DOWNTO 0);
+--	begin
+--		if reset_n = '0' then
+--			phase:='0';
+--			send_s<='0';
+--			i:=0;
+--			shiftReg_v:= (others =>'0');
+--		elsif rising_edge(clockIn) then
+--			uart_done_s<='0';
+--			if enTransferUART_s = '1' and phase ='0' then
+--				phase:='1';
+--				send_s<='1';
+--				i:=0;
+--				shiftReg_v:= data_s;
+--				--txData_s <= "01100001"; -- a 
+--				txData_s <= shiftReg_v(uartDataBitNb-1 downto 0);
+--				shiftReg_v := "00000000" & shiftReg_v(shiftReg_v'high downto uartDataBitNb);
+--			elsif enTransferUART_s = '1'  and phase ='1' then
+--				send_s<='0';
+--				-- wait statut uart not sending
+--				if status_uart_s(statusSendingId) = '0' then
+--					--data_s <= shiftReg_s(uartDataBitNb downto 0);
+--					--shiftReg_s <= shift_right(shiftReg_s, uartDataBitNb);
+--					txData_s <= shiftReg_v(uartDataBitNb-1 downto 0);
+--					--txData_s <= "01100001"; -- a 
+--					--shiftReg_s <= shift_right(shiftReg_s, uartDataBitNb);
+--					shiftReg_v := "00000000" & shiftReg_v(shiftReg_v'high downto uartDataBitNb);
+--					
+--					i:=i+1;
+--					send_s<='1';					
+--					
+--				end if;
+--				if i = shiftReg_v'Length / uartDataBitNb then
+--					uart_done_s<='1';
+--					phase:='0';
+--					send_s<='0';
+--				end if; 
+--			else 
+--				send_s<='0';
+--			end if;
+--		end if;
+--		
+--	end process transferUART;
+	
+	-------------------------------------------------------------
 	-- components UART -------------s
 	Inst_uartCore: uartCore PORT MAP(
-		RxD    => pwr_rxd,
+		--RxD    => rel_RX,
+		RxD => pwr_rxd,
 		clock   => clockIn,
 		read   => '0',
 		reset  => NOT reset_n,
 		scaler => to_unsigned(BAUDERATE_DIVIDER, ahbDataBitNb),
-		send => rel_TX,
+		send => send_s,
 		txData => txData_s,
-		--TxD    => pwr_txd,
-		TxD => test_s,
+		TxD    => pwr_txd,
+		--TxD => rel_TX,
 		rxData => rxData_s,
 		status => status_uart_s
   );
   
-  txData_s <= "01100001"; -- a 
+  --txData_s <= "01100001"; -- a 
   rel_MODE <='1'; 
-  
+  -----------------------------------------------------------
   -- component ADC
    Inst_ads1282: ahbAds1282
   GENERIC MAP (
@@ -201,7 +498,7 @@ begin
 		enable   =>	'1',
 		hAddr    =>  hAddr_s,
 		hClk     =>	clockin,
-		hReset_n => NOT reset_n,
+		hReset_n => reset_n,
 		hSel     => hSel_s,
 		hTrans   => hTrans_s,
 		hWData   => hWData_s,
@@ -217,24 +514,28 @@ begin
 		hResp    => hResp_s
   );
   
+  hTrans_s<=transNonSeq;
+  --hSel_s <='1';
   
+  ------------------------------------------------------------
   
 	process(clockIn, reset_n)
 		variable counter_v : unsigned(31 downto 0);
 	begin
 	  if (reset_n = '0') then
-			send_s<='0';
 			counter_v := (others => '0');
+			test_s <='0';
 	  elsif rising_edge(clockIn) then
 			if clk_1ms_s = '1' then
 				if (counter_v < 1000) then
 					 counter_v:=counter_v+1;
+					 test_s <='0';
 				else
-					send_s<='1';
 					counter_v := (others => '0');
+					test_s <='1';
 				end if;
 			else
-				send_s<='0';
+				test_s <='0';
 			end if;
 	  end if;
 	end process;
