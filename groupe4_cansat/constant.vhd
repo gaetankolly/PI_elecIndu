@@ -15,10 +15,11 @@ constant CLOCK_DIVIDER_1MS: integer:= 106250;
 constant BAUDERATE_DIVIDER : integer:= 922; -- clk/bauderate, 922=115200
 --constant BAUDERATE_DIVIDER : integer:= 10625000;
 
-constant ADC_CLOCK_FREQ: integer:= 2000000;
+--constant ADC_CLOCK_FREQ: integer:= 2000000;
+constant ADC_CLOCK_FREQ: integer:= 4096000;
 constant ADC_CLOCK_DIVIDER: integer:= MASTER_CLOCK/ADC_CLOCK_FREQ;
 --constant SPI_CLOCK_DIVIDER: integer:= MASTER_CLOCK/(ADC_CLOCK_FREQ/4);
-constant SPI_CLOCK_DIVIDER: integer:= 4; --modulator/4
+constant SPI_CLOCK_DIVIDER: integer:= 2; --modulator/4
 
 constant ahbAddressBitNb  : positive := 16;
 --constant ahbDataBitNb     : positive := 16;
