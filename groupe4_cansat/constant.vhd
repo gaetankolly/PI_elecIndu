@@ -5,7 +5,7 @@ use IEEE.NUMERIC_STD.ALL;
 
 package constants is
 
-constant ahbDataBitNb : integer:= 32;
+constant ahbDataBitNb : integer:= 16;
 --constant uartDataBitNb: integer:= 8;
 constant uartDataBitNb: integer:= 8;
 constant uartStatusBitNb: integer:= 4;
@@ -15,7 +15,7 @@ constant CLOCK_DIVIDER_1MS: integer:= 106250;
 constant BAUDERATE_DIVIDER : integer:= 922; -- clk/bauderate, 922=115200
 --constant BAUDERATE_DIVIDER : integer:= 10625000;
 
-constant ADC_CLOCK_FREQ: integer:= 4096000;
+constant ADC_CLOCK_FREQ: integer:= 2000000;
 constant ADC_CLOCK_DIVIDER: integer:= MASTER_CLOCK/ADC_CLOCK_FREQ;
 --constant SPI_CLOCK_DIVIDER: integer:= MASTER_CLOCK/(ADC_CLOCK_FREQ/4);
 constant SPI_CLOCK_DIVIDER: integer:= 4; --modulator/4

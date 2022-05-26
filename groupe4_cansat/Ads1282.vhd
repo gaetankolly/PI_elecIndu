@@ -290,8 +290,9 @@ BEGIN
           if enable = '1' then
             if DRDY_n = not '0' then
               adcState <= sendWakeup;
---              adcState <= waitDataReady;
+					--adcState <= waitDataReady;
             else
+					--adcState <= waitDataReady;
               adcState <= startRead;
             end if;
           elsif modulatorRestartCounter = 1 then
@@ -335,17 +336,23 @@ BEGIN
       when sendWakeup =>
         adcSendCommand <= '1';
         adcCommand <= cmdWakeup;
+		  --adcSendCommand <= '1';
+        --adcCommand <= x"10"; -- start continuous
       when startRead =>
         adcSendRead <= '1';
       when sendStandby =>
         adcSendCommand <= '1';
         adcCommand <= cmdStandby;
+		  --adcSendCommand <= '1';
+        --adcCommand <= x"10"; -- start continuous
+		  --adcCommand <= x"04"; -- start continuous
+		  --adcCommand <= x"06"; -- reset
         adcSetDataAvailable <= '1';
       when others => null;
     end case;
   end process adcControls;
 
-  SYNC <= '0';
+  SYNC <= '1';
   PWDN_n <= not '0';
 
   --============================================================================
@@ -395,13 +402,18 @@ BEGIN
   begin
     case to_integer(addressReg) is
       when valueLowRegisterId =>
-        --hRData <= std_ulogic_vector(adcSample(hRData'range));
-		  hRdata <=   "00000100" & "00000011" & "00000010" & "00001001";
+        hRData <= std_ulogic_vector(adcSample(hRData'range));
+		  --hRdata <=   "01000100" & "00000011" & "00000010" & "01000001";
+		  --hRdata <=   "01100010" & "01100001";
+		  --hRdata<=std_ulogic_vector(adcSample(15 downto 0));
       when valueHighRegisterId =>
-        --hRData <= std_ulogic_vector( shift_right(adcSample, hRData'length)(hRData'range));
-		  hRdata <= "00001000" & "00000111" & "00000110" & "00000101";
+        hRData <= std_ulogic_vector( shift_right(adcSample, hRData'length)(hRData'range));
+		  --hRData <= std_ulogic_vector(adcSample(hRData'range));
+		  --hRdata <= "00001000" & "00000111" & "00000110" & "00000101";
+		  --hRdata <= "01100100" & "01100011";
       when statusRegisterId =>
         hRData <= std_ulogic_vector(adcStatusRegister);
+		  --hRData <=(OTHERS=>'0');
 		  --hRdata <= "00001000" & "00000111" & "00000110" & "00000101";
       when others => hRData <= (others => '-');
     end case;

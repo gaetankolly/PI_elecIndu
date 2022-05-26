@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 # Clock and reset
 #
-NET     "reset_n"					LOC =   "P2"    | PULLUP;
+NET     "reset_n"					LOC =   "P2"    |PULLUP;
 NET     "reset_n" CLOCK_DEDICATED_ROUTE = FALSE; #gives poor timing result to have reset here
 NET     "clockIn"               LOC =  "P16";
 
@@ -10,12 +10,12 @@ NET     "clockIn"               LOC =  "P16";
 #
 NET     "pwr_leds<0>"           LOC = "P121";
 NET     "pwr_leds<1>"           LOC = "P118";
-NET     "pwr_switches<0>"       LOC = "P141"    | PULLUP;
-NET     "pwr_switches<1>"       LOC = "P139"    | PULLUP;
-NET     "pwr_switches<2>"       LOC = "P137"    | PULLUP;
-NET     "pwr_switches<3>"       LOC = "P133"    | PULLUP;
+NET     "pwr_switches<0>"       LOC = "P141"    |PULLUP;
+NET     "pwr_switches<1>"       LOC = "P139"    |PULLUP;
+NET     "pwr_switches<2>"       LOC = "P137"    |PULLUP;
+NET     "pwr_switches<3>"       LOC = "P133"    |PULLUP;
 NET     "pwr_txd"               LOC = "P124";
-NET     "pwr_rxd"               LOC = "P127"| PULLUP;
+NET     "pwr_rxd"               LOC = "P127"|PULLUP;
 
 #-------------------------------------------------------------------------------
 # Sensor board
@@ -25,7 +25,6 @@ NET     "pwr_rxd"               LOC = "P127"| PULLUP;
 #NET     "sens_DRDY_n"           LOC =   "P32";
 #NET     "sens_SCLK"             LOC =   "P35";
 #NET     "sens_SYNC"             LOC =   "P15";
-
 NET     "sens_CLK"              LOC =   "P12";  
 NET     "sens_PWDN_n"           LOC =   "P9" ;
 NET     "sens_RESET_n"          LOC =   "P6" ;
@@ -38,7 +37,6 @@ NET     "sens_DRDY_n"       	LOC =  "P32";
 #NET     "sensors_"       		LOC =  "P26";
 #NET     "sensors_"       		LOC =  "P30";
 #NET     "sensors_cnvtn"       	LOC =  "P33";
-
 #-------------------------------------------------------------------------------
 # Computer On Module (COM) board
 #
@@ -50,7 +48,6 @@ NET     "sens_DRDY_n"       	LOC =  "P32";
 #NET     "com_CLK"               LOC =  "P33";
 #NET     "com_MOSI"              LOC =  "P26";
 #NET     "com_MISO"              LOC =  "P23";
-
 #-------------------------------------------------------------------------------
 # XBee (RF) board
 #
@@ -62,7 +59,6 @@ NET     "sens_DRDY_n"       	LOC =  "P32";
 #NET     "rf_associated"         LOC = "P138";
 #NET     "rf_rssiPwm"            LOC = "P134";
 #NET     "rf_dio"                LOC = "P140";
-
 #-------------------------------------------------------------------------------
 # Relay board
 #
@@ -74,4 +70,8 @@ NET     "sens_DRDY_n"       	LOC =  "P32";
 #NET		"rel_RX"						LOC = "P123";
 #NET		"rel_TX"						LOC = "P126" | PULLUP;
 NET		"rel_MODE"					LOC = "P117";
-
+#Created by Constraints Editor (xc6slx9-tqg144-3) - 2022/05/24
+NET "clockIn" TNM_NET = clockIn;
+TIMESPEC TS_clockIn = PERIOD "clockIn" 5 ns HIGH 50%;
+#Created by Constraints Editor (xc6slx9-tqg144-3) - 2022/05/24
+NET "stateAHB_FSM_FFd1" TNM_NET = stateAHB_FSM_FFd1;
