@@ -303,8 +303,8 @@ BEGIN
         when waitDataReady =>
           if DRDY_n = not '1' then
             adcState <= startRead;
-          elsif enable = '1' then
-            adcState <= waitSample;
+          --elsif enable = '1' then
+          --  adcState <= waitSample;
           end if;
         when startRead =>
           adcState <= waitRead;
@@ -334,15 +334,15 @@ BEGIN
     adcSetDataAvailable <= '0';
     case adcState is
       when sendWakeup =>
-        adcSendCommand <= '1';
-        adcCommand <= cmdWakeup;
+        --adcSendCommand <= '1';
+        --adcCommand <= cmdWakeup;
 		  --adcSendCommand <= '1';
         --adcCommand <= x"10"; -- start continuous
       when startRead =>
         adcSendRead <= '1';
       when sendStandby =>
-        adcSendCommand <= '1';
-        adcCommand <= cmdStandby;
+        --adcSendCommand <= '1';
+        --adcCommand <= cmdStandby;
 		  --adcSendCommand <= '1';
         --adcCommand <= x"10"; -- start continuous
 		  --adcCommand <= x"04"; -- start continuous
@@ -419,9 +419,9 @@ BEGIN
     end case;
   end process selectData;
                                                               -- status register
-  adcStatusRegisterClear(adcDataAvailableId) <= '1' when
-      (isReadAccess = '1') and (to_integer(addressReg) = valueHighRegisterId)
-    else '0';
+  --adcStatusRegisterClear(adcDataAvailableId) <= '1' when
+  --    (isReadAccess = '1') and (to_integer(addressReg) = valueHighRegisterId)
+   -- else '0';
 
     adcClrDataAvailable <= '1' when
       (isReadAccess = '1') and (to_integer(addressReg) = valueHighRegisterId)

@@ -188,12 +188,6 @@ begin
 					 clk_1ms_s <= '1';
 					 counter_v:= (others => '0');
 				end if;
-				-- test
---				if (counter_v < CLOCK_DIVIDER_1MS/2) then
---					ads_wakeUp_s<='0';
---				else
---					ads_wakeUp_s<='1';
---				end if;
         end if;
     end process;
 	 
@@ -278,7 +272,8 @@ begin
 					nextState <= sendData;
 				end if;
 			when pause=>
-				if test_s='1' then
+				--if test_s='1' then
+				if clk_1ms_s='1' then
 					nextState<=wakeupADC;
 				else
 					nextState<=pause;
@@ -321,31 +316,26 @@ begin
 		when wakeupADC =>
 			pwr_leds(0) <='0';
 			pwr_leds(1) <='0';
-			ads_wakeUp_s<='1';
-			
+			ads_wakeUp_s<='1';	
       when waitDataAvailable =>
 			enReadTransferAhb_s<='1';
 			AHB_addr_read_s <=  to_unsigned(statusRegisterId, AHB_addr_read_s'length);
 			pwr_leds(0) <='1';
 			pwr_leds(1) <='0';		
-
       when readLow =>
 			enReadTransferAhb_s<='1';
 			AHB_addr_read_s <=  to_unsigned(valueLowRegisterId, AHB_addr_read_s'length);
 			pwr_leds(0) <='0';
 			pwr_leds(1) <='1';
-
       when readHigh =>
 			enReadTransferAhb_s<='1';
 			AHB_addr_read_s <=  to_unsigned(valueHighRegisterId, AHB_addr_read_s'length);
 			pwr_leds(0) <='1';
-			pwr_leds(1) <='1';
-			
+			pwr_leds(1) <='1';		
       when sendData => 
 			enTransferUART_s<='1';
 			pwr_leds(0) <='0';
-			pwr_leds(1) <='0';
-			
+			pwr_leds(1) <='0';	
 		when pause =>
 			pwr_leds(0) <='0';
 			pwr_leds(1) <='0';
@@ -357,22 +347,28 @@ begin
   -- time from last sample, max = 2^32 * MCK_period =~ 40s
   process(reset_n, clockIn)
 		variable counter_v : unsigned(31 downto 0);
-		variable last_time_v: unsigned(31 downto 0);
+		variable counter_updated: std_logic ;
   begin
     if reset_n = '0' then
       data_s <= (others=> '0');
 		counter_v := (others => '0');
+		counter_updated:='0';
     elsif rising_edge(clockIn) then
 		if (state = readLow) then
 			data_s(ahbDataBitNb-1 DOWNTO 0)<=hRData_s;
-			data_s(63 downto 32) <=std_ulogic_vector(counter_v); 
-			counter_v := (others => '0');
+			if ( counter_updated ='0') then
+				data_s(63 downto 32) <=std_ulogic_vector(counter_v); 
+				counter_v := (others => '0');
+				counter_updated:='1';
+			end if;
 		elsif (state = readHigh) then
 			data_s(ahbDataBitNb*2-1 DOWNTO ahbDataBitNb)<=hRData_s;
 			counter_v:=counter_v+1;
+			counter_updated:='0';
 		else
 			data_s <= data_s;
 			counter_v:=counter_v+1;
+			counter_updated:='0';
 		end if;
 	end if;
 	end process;
@@ -611,7 +607,7 @@ begin
 			test_s <='0';
 	  elsif rising_edge(clockIn) then
 			if clk_1ms_s = '1' then
-				if (counter_v < 2000) then
+				if (counter_v < 100) then
 					 counter_v:=counter_v+1;
 					 test_s <='0';
 				else
