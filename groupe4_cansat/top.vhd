@@ -37,10 +37,10 @@ entity top is
 			pwr_switches: IN STD_LOGIC_VECTOR (3 DOWNTO 0);
 			clockIn: IN STD_LOGIC;				-- 106.25 MHz
 			reset_n: IN STD_LOGIC;
-			pwr_rxd: IN STD_LOGIC;
-			pwr_txd: OUT STD_LOGIC;
-			--rel_RX: IN STD_LOGIC;
-			--rel_TX: OUT STD_LOGIC;
+			--pwr_rxd: IN STD_LOGIC;
+			--pwr_txd: OUT STD_LOGIC;
+			rel_RX: IN STD_LOGIC;
+			rel_TX: OUT STD_LOGIC;
 			rel_MODE: OUT STD_LOGIC;
 			-- Ads128
 			sens_SCLK: OUT STD_LOGIC;
@@ -272,8 +272,8 @@ begin
 					nextState <= sendData;
 				end if;
 			when pause=>
-				--if test_s='1' then
-				if clk_1ms_s='1' then
+				if test_s='1' then
+				--if clk_1ms_s='1' then
 					nextState<=wakeupADC;
 				else
 					nextState<=pause;
@@ -549,16 +549,16 @@ begin
 	-------------------------------------------------------------
 	-- components UART -------------s
 	Inst_uartCore: uartCore PORT MAP(
-		--RxD    => rel_RX,
-		RxD => pwr_rxd,
+		RxD    => rel_RX,
+		--RxD => pwr_rxd,
 		clock   => clockIn,
 		read   => '0',
 		reset  => NOT reset_n,
 		scaler => to_unsigned(BAUDERATE_DIVIDER, ahbDataBitNb),
 		send => send_s,
 		txData => txData_s,
-		TxD    => pwr_txd,
-		--TxD => rel_TX,
+		--TxD    => pwr_txd,
+		TxD => rel_TX,
 		rxData => rxData_s,
 		status => status_uart_s
   );
