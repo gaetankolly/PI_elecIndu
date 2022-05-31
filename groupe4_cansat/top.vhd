@@ -357,7 +357,8 @@ begin
 		if (state = readLow) then
 			data_s(ahbDataBitNb-1 DOWNTO 0)<=hRData_s;
 			if ( counter_updated ='0') then
-				data_s(63 downto 32) <=std_ulogic_vector(counter_v); 
+				--data_s(63 downto 32) <=std_ulogic_vector(counter_v); 
+				data_s(63 downto 32)<= (others => '0');
 				counter_v := (others => '0');
 				counter_updated:='1';
 			end if;
@@ -459,9 +460,7 @@ begin
       when others => null;
     end case;
   end process control;
-	
-	
-	
+
 	------------------------------------------------------------------------
 	-- transfer uart
 	-- FSM uart
@@ -475,7 +474,7 @@ begin
 	 end if;
   end process;
   
-	sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId))
+sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId))
   begin
       case stateUART is
         when idle =>
@@ -512,7 +511,7 @@ begin
       when send =>
 			send_s<='1';
 			uart_done_s<='0';	
-			txData_s <= shiftReg_s(uartDataBitNb-1 downto 0);	
+			txData_s <= shiftReg_s(shiftReg_s'high downto shiftReg_s'high-uartDataBitNb+1); -- first strong byte	
       when sending =>
 			send_s<='0';
 			uart_done_s<='0';	
@@ -531,8 +530,8 @@ begin
       shiftRegCounter_s<=(others => '0');
     elsif rising_edge(clockIn) then
 		if(stateUart = send) then
-			shiftReg_s(shiftReg_s'high-uartDataBitNb downto 0) <= shiftReg_s(shiftReg_s'high downto uartDataBitNb);
-			shiftReg_s(shiftReg_s'high downto shiftReg_s'high-uartDataBitNb) <= (others =>'0');
+			shiftReg_s(shiftReg_s'high downto uartDataBitNb) <= shiftReg_s(shiftReg_s'high-uartDataBitNb downto 0);
+			shiftReg_s(uartDataBitNb-1 downto 0) <= (others =>'0');
 			shiftRegCounter_s<=shiftRegCounter_s+1;
 		elsif stateUart = sending then
 			shiftRegCounter_s<=shiftRegCounter_s;
