@@ -148,6 +148,8 @@ architecture Behavioral of top is
   constant statusSendingId: natural := 1;
   constant statusReceivingId: natural := 2;
   
+  constant UART_start_byte: std_ulogic_vector(uartDataBitNb-1 downto 0) := "00000000";
+  
   -- Ads1282
   signal hAddr_s : unsigned(ahbAddressBitNb-1 DOWNTO 0);
   signal hSel_s : std_ulogic;
@@ -260,7 +262,8 @@ begin
         		end if;
 			when readHigh =>
 				if ahbDone_s ='1' then
-					nextState <= sendData;
+					--nextState <= sendData;
+					nextState <= pause; -- skip send data, managed separately
 				else
 					nextState <= readHigh;
 				end if;
@@ -333,9 +336,9 @@ begin
 			pwr_leds(0) <='1';
 			pwr_leds(1) <='1';		
       when sendData => 
-			enTransferUART_s<='1';
-			pwr_leds(0) <='0';
-			pwr_leds(1) <='0';	
+--			enTransferUART_s<='1';
+--			pwr_leds(0) <='0';
+--			pwr_leds(1) <='0';	
 		when pause =>
 			pwr_leds(0) <='0';
 			pwr_leds(1) <='0';
@@ -478,7 +481,9 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
   begin
       case stateUART is
         when idle =>
-				if enTransferUART_s ='1' then 
+				--if enTransferUART_s ='1' then 
+				--if (status_uart_s(statusReadyId) = '1') and rxData_s = UART_start_byte then
+				if status_uart_s(statusReadyId) = '1' then
 					nextStateUART <= send;
 				else
 					nextStateUART <= idle;
@@ -507,17 +512,21 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
       when idle =>
 			send_s<='0';
 			uart_done_s<='0';
-			-- 
+			-- wait to recieve start byte
+			rel_MODE <='0'; 
       when send =>
 			send_s<='1';
 			uart_done_s<='0';	
 			txData_s <= shiftReg_s(shiftReg_s'high downto shiftReg_s'high-uartDataBitNb+1); -- first strong byte	
+			rel_MODE <='1'; 
       when sending =>
 			send_s<='0';
-			uart_done_s<='0';	
+			uart_done_s<='0';
+			rel_MODE <='1'; 
       when ending => 
       	uart_done_s<='1';
 			send_s<='0';
+			rel_MODE <='1'; 
       when others => null;
     end case;
   end process controlUART; 
@@ -563,7 +572,7 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
   );
   
   --txData_s <= "01100001"; -- a 
-  rel_MODE <='1'; 
+  --rel_MODE <='1'; 
   -----------------------------------------------------------
   --ads_wakeUp_s<='1';
   -- component ADC
