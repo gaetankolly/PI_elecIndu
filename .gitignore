@@ -7,7 +7,6 @@ groupe4_cansat/top.bgn
 *.drc
 *.lso
 groupe4_cansat/top_pad.csv
-*.bit
 *.ncd
 *.ngc
 *.ngd

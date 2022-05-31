@@ -37,10 +37,10 @@ entity top is
 			pwr_switches: IN STD_LOGIC_VECTOR (3 DOWNTO 0);
 			clockIn: IN STD_LOGIC;				-- 106.25 MHz
 			reset_n: IN STD_LOGIC;
-			--pwr_rxd: IN STD_LOGIC;
-			--pwr_txd: OUT STD_LOGIC;
-			rel_RX: IN STD_LOGIC;
-			rel_TX: OUT STD_LOGIC;
+			pwr_rxd: IN STD_LOGIC;
+			pwr_txd: OUT STD_LOGIC;
+			--rel_RX: IN STD_LOGIC;
+			--rel_TX: OUT STD_LOGIC;
 			rel_MODE: OUT STD_LOGIC;
 			-- Ads128
 			sens_SCLK: OUT STD_LOGIC;
@@ -131,6 +131,7 @@ architecture Behavioral of top is
   
   -- Uart
   signal send_s : std_ulogic;
+  signal rcv_s: std_ulogic;
   signal rxData_s: std_ulogic_vector(uartDataBitNb-1 downto 0);
   signal txData_s: std_ulogic_vector(uartDataBitNb-1 downto 0);
   signal status_uart_s: std_ulogic_vector (uartStatusBitNb-1 DOWNTO 0);
@@ -513,20 +514,20 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
 			send_s<='0';
 			uart_done_s<='0';
 			-- wait to recieve start byte
-			rel_MODE <='0'; 
+			rcv_s <= '1';
       when send =>
 			send_s<='1';
 			uart_done_s<='0';	
 			txData_s <= shiftReg_s(shiftReg_s'high downto shiftReg_s'high-uartDataBitNb+1); -- first strong byte	
-			rel_MODE <='1'; 
+			rcv_s <= '0';
       when sending =>
 			send_s<='0';
 			uart_done_s<='0';
-			rel_MODE <='1'; 
+			rcv_s <= '0';
       when ending => 
       	uart_done_s<='1';
 			send_s<='0';
-			rel_MODE <='1'; 
+			rcv_s <= '0'; 
       when others => null;
     end case;
   end process controlUART; 
@@ -557,22 +558,23 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
 	-------------------------------------------------------------
 	-- components UART -------------s
 	Inst_uartCore: uartCore PORT MAP(
-		RxD    => rel_RX,
-		--RxD => pwr_rxd,
+		--RxD    => rel_RX,
+		RxD => pwr_rxd,
 		clock   => clockIn,
-		read   => '0',
+		read   => rcv_s,
 		reset  => NOT reset_n,
 		scaler => to_unsigned(BAUDERATE_DIVIDER, ahbDataBitNb),
 		send => send_s,
 		txData => txData_s,
-		--TxD    => pwr_txd,
-		TxD => rel_TX,
+		TxD    => pwr_txd,
+		--TxD => rel_TX,
 		rxData => rxData_s,
 		status => status_uart_s
   );
   
   --txData_s <= "01100001"; -- a 
-  --rel_MODE <='1'; 
+  rel_MODE <=not rcv_s; 
+  -- rel_MODE <='1'; 
   -----------------------------------------------------------
   --ads_wakeUp_s<='1';
   -- component ADC
