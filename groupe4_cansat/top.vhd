@@ -37,10 +37,10 @@ entity top is
 			pwr_switches: IN STD_LOGIC_VECTOR (3 DOWNTO 0);
 			clockIn: IN STD_LOGIC;				-- 106.25 MHz
 			reset_n: IN STD_LOGIC;
-			pwr_rxd: IN STD_LOGIC;
-			pwr_txd: OUT STD_LOGIC;
-			--rel_RX: IN STD_LOGIC;
-			--rel_TX: OUT STD_LOGIC;
+			--pwr_rxd: IN STD_LOGIC;
+			--pwr_txd: OUT STD_LOGIC;
+			rel_RX: IN STD_LOGIC;
+			rel_TX: OUT STD_LOGIC;
 			rel_MODE: OUT STD_LOGIC;
 			-- Ads128
 			sens_SCLK: OUT STD_LOGIC;
@@ -149,7 +149,7 @@ architecture Behavioral of top is
   constant statusSendingId: natural := 1;
   constant statusReceivingId: natural := 2;
   
-  constant UART_start_byte: std_ulogic_vector(uartDataBitNb-1 downto 0) := "00000000";
+  constant UART_start_byte: std_ulogic_vector(uartDataBitNb-1 downto 0) := "01100001";
   
   -- Ads1282
   signal hAddr_s : unsigned(ahbAddressBitNb-1 DOWNTO 0);
@@ -265,6 +265,7 @@ begin
 				if ahbDone_s ='1' then
 					--nextState <= sendData;
 					nextState <= pause; -- skip send data, managed separately
+					--nextState <= wakeupADC; 
 				else
 					nextState <= readHigh;
 				end if;
@@ -276,8 +277,8 @@ begin
 					nextState <= sendData;
 				end if;
 			when pause=>
-				if test_s='1' then
-				--if clk_1ms_s='1' then
+				--if test_s='1' then
+				if clk_1ms_s='1' then
 					nextState<=wakeupADC;
 				else
 					nextState<=pause;
@@ -358,11 +359,15 @@ begin
 		counter_v := (others => '0');
 		counter_updated:='0';
     elsif rising_edge(clockIn) then
+	 data_s <= data_s;
 		if (state = readLow) then
 			data_s(ahbDataBitNb-1 DOWNTO 0)<=hRData_s;
 			if ( counter_updated ='0') then
 				--data_s(63 downto 32) <=std_ulogic_vector(counter_v); 
-				data_s(63 downto 32)<= (others => '0');
+				--data_s(63 downto 32) <= elapseTime_s;
+				--data_s(63 downto 32)<= (others => '1');
+				--data_s(63 downto 32) <= UART_start_byte & UART_start_byte & UART_start_byte & UART_start_byte;
+				data_s(63 downto 32) <= "01000001" & "01000001" & "01000001" & "01000001";
 				counter_v := (others => '0');
 				counter_updated:='1';
 			end if;
@@ -371,7 +376,6 @@ begin
 			counter_v:=counter_v+1;
 			counter_updated:='0';
 		else
-			data_s <= data_s;
 			counter_v:=counter_v+1;
 			counter_updated:='0';
 		end if;
@@ -483,8 +487,8 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
       case stateUART is
         when idle =>
 				--if enTransferUART_s ='1' then 
-				--if (status_uart_s(statusReadyId) = '1') and rxData_s = UART_start_byte then
-				if status_uart_s(statusReadyId) = '1' then
+				if (status_uart_s(statusReadyId) = '1') and rxData_s = UART_start_byte then
+				--if status_uart_s(statusReadyId) = '1' then
 					nextStateUART <= send;
 				else
 					nextStateUART <= idle;
@@ -558,16 +562,16 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
 	-------------------------------------------------------------
 	-- components UART -------------s
 	Inst_uartCore: uartCore PORT MAP(
-		--RxD    => rel_RX,
-		RxD => pwr_rxd,
+		RxD    => rel_RX,
+		--RxD => pwr_rxd,
 		clock   => clockIn,
 		read   => rcv_s,
 		reset  => NOT reset_n,
 		scaler => to_unsigned(BAUDERATE_DIVIDER, ahbDataBitNb),
 		send => send_s,
 		txData => txData_s,
-		TxD    => pwr_txd,
-		--TxD => rel_TX,
+		--TxD    => pwr_txd,
+		TxD => rel_TX,
 		rxData => rxData_s,
 		status => status_uart_s
   );
