@@ -9,6 +9,7 @@ constant ahbDataBitNb : integer:= 16;
 --constant uartDataBitNb: integer:= 8;
 constant uartDataBitNb: integer:= 8;
 constant uartStatusBitNb: integer:= 4;
+constant uartNbByteFrame: integer:= 8;
 
 constant MASTER_CLOCK : integer:= 106250000; --Hz
 constant CLOCK_DIVIDER_1MS: integer:= 106250;

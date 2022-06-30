@@ -125,13 +125,13 @@ architecture Behavioral of top is
   signal stateAHB: stateAHBType;
   signal nextStateAHB: stateAHBType;
   signal AHB_addr_read_s:  unsigned(ahbAddressBitNb-1 DOWNTO 0);
-  --signal AHB_data_read_s: std_ulogic_vector (ahbDataBitNb-1 DOWNTO 0);
+  signal AHB_data_read_s: std_ulogic_vector (ahbDataBitNb-1 DOWNTO 0);
   signal AHB_addr_write_s:  unsigned(ahbAddressBitNb-1 DOWNTO 0);
   signal AHB_data_write_s: std_ulogic_vector (ahbDataBitNb-1 DOWNTO 0);
   
   -- Uart
-  signal send_s : std_ulogic;
-  signal rcv_s: std_ulogic;
+  signal sendEnable_s : std_ulogic;
+  signal recieveEnable_s: std_ulogic;
   signal rxData_s: std_ulogic_vector(uartDataBitNb-1 downto 0);
   signal txData_s: std_ulogic_vector(uartDataBitNb-1 downto 0);
   signal status_uart_s: std_ulogic_vector (uartStatusBitNb-1 DOWNTO 0);
@@ -149,7 +149,9 @@ architecture Behavioral of top is
   constant statusSendingId: natural := 1;
   constant statusReceivingId: natural := 2;
   
-  constant UART_start_byte: std_ulogic_vector(uartDataBitNb-1 downto 0) := "01100001";
+  constant UART_start_bytes: std_ulogic_vector(2*uartDataBitNb-1 downto 0) := "01100001" & "01100010"; -- ab
+  constant UART_stop_bytes: std_ulogic_vector(2*uartDataBitNb-1 downto 0) := "01100011" & "01100100"; -- cd
+  constant UART_start_byte:  std_ulogic_vector(uartDataBitNb-1 downto 0) := "01100001"; --a
   
   -- Ads1282
   signal hAddr_s : unsigned(ahbAddressBitNb-1 DOWNTO 0);
@@ -221,13 +223,13 @@ begin
 	--pwr_leds(1) <= status_uart_s(1);
 	--pwr_leds(1)<='0';
 	--pwr_leds(1) <=test_s;
-	--pwr_leds(0)<=send_s;
+	--pwr_leds(0)<=sendEnable_s;
 	--pwr_txd<=test_s;
 	--rel_TX<=test_s;
 	---------------------------------------------------------------
 
 	-- main FSM
-  sequencer: process(state,clk_1ms_s,reset_done_s,ahbDone_s,hRData_s(adcDataAvailableId),uart_done_s,test_s)
+  sequencer: process(state,clk_1ms_s,reset_done_s,ahbDone_s,AHB_data_write_s(adcDataAvailableId),uart_done_s,test_s)
   begin
       case state is
 			when idle=>
@@ -250,7 +252,7 @@ begin
 					nextState <= waitDataAvailable;
 					--nextState <= readLow;
 			when waitDataAvailable =>
-			 if ahbDone_s ='1' and hRData_s(adcDataAvailableId) ='1' then 
+			 if ahbDone_s ='1' and AHB_data_read_s(adcDataAvailableId) ='1' then 
 					nextState <= readLow;
 			else
 					nextState <= waitDataAvailable;
@@ -359,20 +361,27 @@ begin
 		counter_v := (others => '0');
 		counter_updated:='0';
     elsif rising_edge(clockIn) then
-	 data_s <= data_s;
+
+	 --data_s(63 downto 32) <= "01000001" & "01000001" & "01000001" & "01000001";
+	 --data_s(ahbDataBitNb-1 DOWNTO 0)<= data_s(ahbDataBitNb-1 DOWNTO 0);
+	 data_s(63 downto 48) <= UART_start_bytes;
+	 data_s(15 downto 0) <= UART_stop_bytes;
+	 data_s(47 DOWNTO 16) <= data_s(47 DOWNTO 16);
 		if (state = readLow) then
-			data_s(ahbDataBitNb-1 DOWNTO 0)<=hRData_s;
+			--data_s(ahbDataBitNb-1 DOWNTO 0)<=AHB_data_read_s;		
+			data_s(31 DOWNTO 16)<=AHB_data_read_s;	
 			if ( counter_updated ='0') then
 				--data_s(63 downto 32) <=std_ulogic_vector(counter_v); 
 				--data_s(63 downto 32) <= elapseTime_s;
 				--data_s(63 downto 32)<= (others => '1');
 				--data_s(63 downto 32) <= UART_start_byte & UART_start_byte & UART_start_byte & UART_start_byte;
-				data_s(63 downto 32) <= "01000001" & "01000001" & "01000001" & "01000001";
+				--data_s(63 downto 32) <= "01000001" & "01000001" & "01000001" & "01000001";
 				counter_v := (others => '0');
 				counter_updated:='1';
 			end if;
 		elsif (state = readHigh) then
-			data_s(ahbDataBitNb*2-1 DOWNTO ahbDataBitNb)<=hRData_s;
+			--data_s(ahbDataBitNb*2-1 DOWNTO ahbDataBitNb)<=AHB_data_read_s;
+			data_s(47 DOWNTO 32)<=AHB_data_read_s;	
 			counter_v:=counter_v+1;
 			counter_updated:='0';
 		else
@@ -382,7 +391,7 @@ begin
 	end if;
 	end process;
 	
--- process enable ads
+-- process reset
   process(reset_n, clockIn)
   begin
     if reset_n = '0' then
@@ -396,7 +405,7 @@ begin
 	end if;
 	end process;
 ---------------------------------------------------------------------------  
-	-- only read Bus ahb FSM, no wait, 
+	-- read Bus ahb FSM, no wait, 
   process(stateAHB,enReadTransferAhb_s,enWriteTransferAhb_s)
   begin
       case stateAHB is
@@ -411,11 +420,13 @@ begin
 			when readRequest =>
 					nextStateAHB <= readTransfer;
 			when readTransfer =>
-					nextStateAHB <= ending;
+					--nextStateAHB <= ending;
+					nextStateAHB <= idle;
 			when writeRequest =>
 					nextStateAHB <= writeTransfer;
 			when writeTransfer =>
-					nextStateAHB <= ending;
+					--nextStateAHB <= ending;
+					nextStateAHB <= idle;
 			when ending => 
 					nextStateAHB <= idle;
       end case;
@@ -433,31 +444,25 @@ begin
   process(stateAHB,AHB_addr_read_s,AHB_data_write_s,AHB_addr_write_s)
   begin
   hWData_s <=(others => '0');
+	hSel_s<='0';
+	ahbDone_s<='0';
+	hwrite_s <='0';
+	hAddr_s<=(others=>'0');
     case stateAHB is
       when idle =>
-			hSel_s<='0';
-			ahbDone_s<='0';
-			hwrite_s <='0';
-			hAddr_s<=hAddr_s;
+			null;
       when readRequest =>
-			hSel_s<='1';
-			ahbDone_s<='0';
-			hwrite_s <='0';			
+			hSel_s<='1';		
 			hAddr_s<=AHB_addr_read_s;
       when readTransfer=>
-			hSel_s<='0';
-			ahbDone_s<='0';
-			hwrite_s <='0';
+			ahbDone_s<='1';
 			hAddr_s<=hAddr_s;
       when writeRequest =>
 			hSel_s<='1';
-			ahbDone_s<='0';
 			hwrite_s <='1';			
 			hAddr_s<=AHB_addr_write_s;
       when writeTransfer=>
-			hSel_s<='0';
-			ahbDone_s<='0';
-			hwrite_s <='0';
+			ahbDone_s<='1';
 			hAddr_s<=hAddr_s;
 			hWData_s<=AHB_data_write_s;
       when ending => 
@@ -468,6 +473,8 @@ begin
       when others => null;
     end case;
   end process control;
+  
+	 AHB_data_read_s <= hRData_s;
 
 	------------------------------------------------------------------------
 	-- transfer uart
@@ -497,7 +504,7 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
 				nextStateUART<= sending;
 			when sending =>
 				if status_uart_s(statusSendingId) = '0' then
-					if shiftRegCounter_s <8   then
+					if shiftRegCounter_s <uartNbByteFrame   then
 						nextStateUART <= send;
 					else 
 						nextStateUART <= ending;
@@ -515,23 +522,23 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
   begin
     case stateUART is
       when idle =>
-			send_s<='0';
+			sendEnable_s<='0';
 			uart_done_s<='0';
 			-- wait to recieve start byte
-			rcv_s <= '1';
+			recieveEnable_s <= '1';
       when send =>
-			send_s<='1';
+			sendEnable_s<='1';
 			uart_done_s<='0';	
-			txData_s <= shiftReg_s(shiftReg_s'high downto shiftReg_s'high-uartDataBitNb+1); -- first strong byte	
-			rcv_s <= '0';
+			txData_s <= shiftReg_s(shiftReg_s'high downto shiftReg_s'high-uartDataBitNb+1); -- first strong byte, latch..	
+			recieveEnable_s <= '0';
       when sending =>
-			send_s<='0';
+			sendEnable_s<='0';
 			uart_done_s<='0';
-			rcv_s <= '0';
+			recieveEnable_s <= '0';
       when ending => 
       	uart_done_s<='1';
-			send_s<='0';
-			rcv_s <= '0'; 
+			sendEnable_s<='0';
+			recieveEnable_s <= '0'; 
       when others => null;
     end case;
   end process controlUART; 
@@ -565,10 +572,10 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
 		RxD    => rel_RX,
 		--RxD => pwr_rxd,
 		clock   => clockIn,
-		read   => rcv_s,
+		read   => recieveEnable_s,
 		reset  => NOT reset_n,
 		scaler => to_unsigned(BAUDERATE_DIVIDER, ahbDataBitNb),
-		send => send_s,
+		send => sendEnable_s,
 		txData => txData_s,
 		--TxD    => pwr_txd,
 		TxD => rel_TX,
@@ -577,7 +584,7 @@ sequencerUART: process(enTransferUART_s,stateUART,status_uart_s(statusSendingId)
   );
   
   --txData_s <= "01100001"; -- a 
-  rel_MODE <=not rcv_s; 
+  rel_MODE <=not recieveEnable_s; 
   -- rel_MODE <='1'; 
   -----------------------------------------------------------
   --ads_wakeUp_s<='1';

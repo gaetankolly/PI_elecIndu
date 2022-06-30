@@ -1,0 +1,11 @@
+# PROMGEN: Xilinx Prom Generator P.20131013
+# Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+SOFTWARE_VERSION P.20131013
+DATE            06/08/2022 - 14:03
+SOURCE          D:\master\PI_elecIndu\gitProject\PI_elecIndu\groupe4_cansat\flash.mcs
+DEVICE          1024K
+DATA_WIDTH      1
+FILL_DATA       0xFF
+SIGNATURE       0x0ACE6873
+START_ADDRESS   0x00000000 END_ADDRESS 0x0005327B DIRECTION_UP   "D:/master/PI_elecIndu/gitProject/PI_elecIndu/groupe4_cansat/top.bit" 6slx9tqg144
